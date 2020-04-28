@@ -74,7 +74,7 @@ class Cell:
                              (self.pos_x + Cell.digit_font / 2,
                               self.pos_y + Cell.digit_font / 20))
         elif candidates_state == colors['easy'] and self.value == 0:
-            candidates = backend.get_possibilities(self.row, self.column)
+            candidates = backend.get_possibilities(self.row, self.column, backend.grid)
             for candidate in candidates:
                 if candidate < 4:
                     x = self.pos_x + candidate * 12
@@ -142,29 +142,30 @@ def click_action(x_cord, y_cord, difficulty, is_filled, blanks, candidates, sele
     return difficulty, is_filled, blanks, candidates, selected_cell
 
 
-def confirm_input():
-    for cell in cells.values():
-        if cell.value == 0 and len(cell.input_value) != 0:
+def confirm_input(dic):
+    for cell in dic.values():
+        if cell.value == 0 and len(cell.input_value):
             if int(cell.input_value) == backend.grid_c[cell.row][cell.column]:
                 backend.grid[cell.row][cell.column] = int(cell.input_value)
+                backend.color[str(cell.row)+str(cell.column)] = colors['sub_selected']
                 cell.input_value = ''
                 cell.input_digit_candidates = ''
             else:
                 backend.color[str(cell.row)+str(cell.column)] = colors['expert']
 
 
-def input_action(selected, char, y_pos):
+def input_action(dic, selected, char, y_pos):
     try:
         if char == 'del':
-            cells[selected].input_digit_candidates = cells[selected].input_digit_candidates[:-1]
+            dic[selected].input_digit_candidates = dic[selected].input_digit_candidates[:-1]
         else:
-            if cells[selected].pos_y + 20 > y_pos:
-                if cells[selected].value == 0 and len(cells[selected].input_digit_candidates) < 9 and \
-                        char not in cells[selected].input_digit_candidates:
-                    cells[selected].input_digit_candidates += str(char)
+            if dic[selected].pos_y + 20 > y_pos:
+                if dic[selected].value == 0 and len(dic[selected].input_digit_candidates) < 9 and \
+                        char not in dic[selected].input_digit_candidates:
+                    dic[selected].input_digit_candidates += str(char)
             else:
-                if cells[selected].value == 0:
-                    cells[selected].input_value = str(char)
+                if dic[selected].value == 0:
+                    dic[selected].input_value = str(char)
     except ValueError:
         pass
 
@@ -192,7 +193,7 @@ def generate_new_grid(is_filled, blanks):
     for cell in cells.values():
         cell.input_digit_candidates = ''
         cell.input_value = ''
-    backend.fill_grid(is_filled)
+    backend.fill_grid(is_filled, backend.grid)
     draw_grid(True)
     backend.copy_grid()
     pygame.time.wait(300)
@@ -287,11 +288,11 @@ def main():
             elif event.type == pygame.KEYDOWN:
                 if pygame.K_1 <= event.key <= pygame.K_9:
                     character = chr(event.key)
-                    input_action(selected_cell, character, y)
+                    input_action(cells, selected_cell, character, y)
                 elif event.key == pygame.K_BACKSPACE:
-                    input_action(selected_cell, 'del')
+                    input_action(cells, selected_cell, 'del')
                 elif event.key == pygame.K_RETURN:
-                    confirm_input()
+                    confirm_input(cells)
 
         if backend.grid_c == backend.grid:
             win()
